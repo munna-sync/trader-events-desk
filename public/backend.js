@@ -195,7 +195,7 @@
     TED._runs = runs;
     if (!ai.status && !ai.loading) setTimeout(loadStatus, 0);
     var s = ai.status, h = '<div id="aiPanel" class="ai form">';
-    h += '<p class="note full">The daily job runs on Vercel once a day (scheduled for 05:45 BDST). Each run asks the AI provider you choose here to search the web for new events in one area (trading, trade/SaaS/fintech, business, rotating daily), checks and de-duplicates the results, and adds them to the Review queue unapproved.</p>';
+    h += '<p class="note full">The daily job runs on Vercel once a day (between 06:00 and 06:59 BDST). It reads the free Claude daily feed and any other feeds, and, if you add an AI key here, also asks that provider to search the web for new events in one area (rotating daily). Results are checked, de-duplicated and added to the Review queue unapproved.</p>';
     if (ai.msg) h += '<p class="msg full ' + ai.msg[0] + '">' + esc(ai.msg[1]) + '</p>';
     if (!s) return h + '<p class="note full">' + (ai.loading ? "Loading AI settings…" : "") + '</p>' + runsList(runs) + '</div>';
     var set = s.settings, P = s.providers;
