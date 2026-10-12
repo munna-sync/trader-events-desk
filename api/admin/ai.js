@@ -36,7 +36,7 @@ export default async function handler(req, res) {
           updatedAt: row?.updated_at || null,
         }];
       }));
-      return res.status(200).json({ ok: true, settings, providers, canStoreKeys: canStoreKeys(), cronSchedule: "45 23 * * * (UTC) = 05:45 BDST" });
+      return res.status(200).json({ ok: true, settings, providers, canStoreKeys: canStoreKeys(), cronSchedule: "15 0 * * * (UTC) = between 06:00 and 06:59 BDST" });
     }
 
     if (req.method !== "POST") return res.status(405).json({ ok: false, error: "Use GET or POST" });
