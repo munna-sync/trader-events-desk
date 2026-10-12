@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Trading, fintech, trade and business events with times in BDST and UTC.">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Trader Events Desk</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@85,600;85,700;100,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: a trading-desk calendar. Live BDST/UTC clocks in the header, a sticky rail with
+   timeframe tabs + My Plan, filters on the left, event tickets in the main column. Dark-first. */
+:root {
+  --bg: #0c1018; --surface: #131926; --raise: #1a2232; --line: #263043; --fg: #e9edf4; --muted: #8f9bb0;
+  --accent: #e8b04a; --accent-soft: #2e2615; --on-accent: #1a1204;
+  --ok: #57cf93; --ok-bg: #11291d; --info: #5fc8d8; --info-bg: #0f2a30; --plan: #8fa6ff; --plan-bg: #1b2447;
+  --bad: #ff8a80; --bad-bg: #3a1614; --neutral: #aab3c4; --neutral-bg: #222b3c; --violet: #c49bff; --violet-bg: #2a1f43;
+  --font-display: "Archivo", "Arial Narrow", Arial, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --bg: #f3f5f9; --surface: #ffffff; --raise: #eef1f6; --line: #d8dee8; --fg: #121826; --muted: #586377;
+  --accent: #9a6700; --accent-soft: #f6ecd6; --on-accent: #ffffff;
+  --ok: #137a49; --ok-bg: #dcf3e6; --info: #0d7486; --info-bg: #daf2f6; --plan: #3550c9; --plan-bg: #e2e8ff;
+  --bad: #b3261e; --bad-bg: #fbe1de; --neutral: #4a5468; --neutral-bg: #e6e9ef; --violet: #6a3fc0; --violet-bg: #eee6fb;
+  color-scheme: light; } }
+:root[data-theme="light"] {
+  --bg: #f3f5f9; --surface: #ffffff; --raise: #eef1f6; --line: #d8dee8; --fg: #121826; --muted: #586377;
+  --accent: #9a6700; --accent-soft: #f6ecd6; --on-accent: #ffffff;
+  --ok: #137a49; --ok-bg: #dcf3e6; --info: #0d7486; --info-bg: #daf2f6; --plan: #3550c9; --plan-bg: #e2e8ff;
+  --bad: #b3261e; --bad-bg: #fbe1de; --neutral: #4a5468; --neutral-bg: #e6e9ef; --violet: #6a3fc0; --violet-bg: #eee6fb;
+  color-scheme: light; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.5 var(--font-body); }
+a { color: var(--accent); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1260px; margin: 0 auto; padding-inline: 20px; }
+@media (max-width: 520px) { .wrap { padding-inline: 16px; } }
+
+.top { padding-block: 20px 14px; display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; justify-content: space-between; }
+.brand h1 { margin: 0; font: 700 clamp(26px, 4.2vw, 36px)/1 var(--font-display); font-stretch: 85%; letter-spacing: -0.01em; text-transform: uppercase; }
+.brand h1 em { font-style: normal; color: var(--accent); }
+.brand p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+.clocks { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.clock { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 6px 12px; display: flex; flex-direction: column; min-width: 104px; }
+.clock span { font: 600 10px var(--font-mono); letter-spacing: .12em; color: var(--muted); }
+.clock b { font: 600 20px/1.1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.clock.bd b { color: var(--accent); }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 14px; cursor: pointer; font-weight: 600; font-size: 14px; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn.ghost { background: transparent; }
+.btn.danger { color: var(--bad); }
+.btn.small { padding: 5px 10px; font-size: 13px; }
+
+.rail { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.rail-inner { display: flex; gap: 12px; align-items: center; padding-block: 10px; flex-wrap: wrap; }
+.tabs { display: flex; gap: 4px; background: var(--raise); padding: 4px; border-radius: 10px; overflow-x: auto; max-width: 100%; }
+.tab { border: 0; background: transparent; padding: 7px 12px; border-radius: 7px; cursor: pointer; white-space: nowrap; font-weight: 600; font-size: 14px; color: var(--muted); display: flex; gap: 8px; align-items: baseline; }
+.tab .n { font: 600 12px var(--font-mono); font-variant-numeric: tabular-nums; }
+.tab[aria-selected="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgb(0 0 0 / .2); }
+.tab[aria-selected="true"] .n { color: var(--accent); }
+.tab.plan { color: var(--plan); }
+.tab.plan[aria-selected="true"] { color: var(--fg); }
+.tab.plan[aria-selected="true"] .n { color: var(--plan); }
+.sep { width: 1px; align-self: stretch; background: var(--line); margin: 2px 2px; }
+.search { flex: 1 1 240px; min-width: 0; position: relative; }
+.search input { width: 100%; padding: 9px 12px 9px 34px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; stroke: var(--muted); fill: none; stroke-width: 2; }
+
+.layout { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 28px; padding-block: 22px 60px; align-items: start; }
+.layout.noside { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 880px) { .layout { grid-template-columns: minmax(0, 1fr); gap: 16px; } }
+
+.filters { position: sticky; top: 72px; max-height: calc(100vh - 88px); overflow: auto; display: flex; flex-direction: column; gap: 16px; padding-right: 4px; }
+@media (max-width: 880px) { .filters { position: static; max-height: none; } .filters.collapsed { display: none; } }
+.filters details { border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+.filters summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; font: 600 11px var(--font-mono); text-transform: uppercase; letter-spacing: .12em; color: var(--muted); }
+.filters summary::-webkit-details-marker { display: none; }
+.filters summary::after { content: "+"; }
+.filters details[open] summary::after { content: "\2212"; }
+.fbody { display: flex; flex-direction: column; gap: 3px; margin-top: 10px; }
+.grp { font-size: 12px; font-weight: 600; margin: 8px 0 2px; }
+.chk { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; cursor: pointer; padding: 2px 0; }
+.chk input { accent-color: var(--accent); margin-top: 3px; }
+.chk .c { margin-left: auto; font: 500 12px var(--font-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.mobile-only { display: none; }
+@media (max-width: 880px) { .mobile-only { display: inline-flex; } }
+
+.summary { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: baseline; justify-content: space-between; margin-bottom: 10px; }
+.summary h2 { margin: 0; font: 700 22px var(--font-display); font-stretch: 85%; }
+.summary .sub { color: var(--muted); font: 500 12px var(--font-mono); }
+.month { display: flex; align-items: center; gap: 10px; margin: 24px 0 10px; }
+.month:first-of-type { margin-top: 4px; }
+.month h3 { font: 600 12px var(--font-mono); letter-spacing: .14em; text-transform: uppercase; margin: 0; color: var(--muted); }
+.month::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+
+.ev { display: grid; grid-template-columns: 70px minmax(0, 1fr) 168px; gap: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin-bottom: 10px; position: relative; }
+.ev.pending { border-style: dashed; }
+.ev.marked { border-color: color-mix(in srgb, var(--plan) 55%, var(--line)); }
+.date { display: flex; flex-direction: column; align-items: center; gap: 2px; border-right: 1px solid var(--line); padding-right: 14px; }
+.date .d { font: 600 32px/1 var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
+.date .m { font: 600 11px var(--font-mono); letter-spacing: .16em; color: var(--accent); }
+.date .ticker { margin-top: 8px; font: 600 10px var(--font-mono); letter-spacing: .08em; padding: 2px 6px; border-radius: 4px; background: var(--raise); color: var(--fg); }
+.body { min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { font: 600 11px var(--font-body); text-transform: uppercase; letter-spacing: .05em; padding: 3px 8px; border-radius: 5px; white-space: nowrap; }
+.s-open { color: var(--ok); background: var(--ok-bg); }
+.s-early { color: var(--info); background: var(--info-bg); }
+.s-upcoming { color: var(--neutral); background: var(--neutral-bg); }
+.s-app { color: var(--violet); background: var(--violet-bg); }
+.s-sold { color: var(--bad); background: var(--bad-bg); }
+.s-closed { color: var(--neutral); background: var(--neutral-bg); text-decoration: line-through; }
+.p-virtual { color: var(--accent); background: var(--accent-soft); }
+.p-format { color: var(--muted); border: 1px solid var(--line); }
+.p-live { color: var(--on-accent); background: var(--accent); }
+.p-pend { color: var(--accent); border: 1px dashed var(--accent); }
+.ev h4 { margin: 0; font: 700 19px/1.2 var(--font-display); font-stretch: 85%; text-wrap: balance; }
+.ev h4 button { all: unset; cursor: pointer; }
+.ev h4 button:hover { color: var(--accent); text-decoration: underline; }
+.ev h4 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.org { margin: 0; color: var(--muted); font-size: 14px; }
+.times { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; font: 500 13px var(--font-mono); font-variant-numeric: tabular-nums; background: var(--raise); border-radius: 7px; padding: 8px 10px; }
+.times dt { color: var(--muted); font-weight: 600; letter-spacing: .06em; }
+.times dt.bd { color: var(--accent); }
+.times dd { margin: 0; min-width: 0; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 6px 16px; font-size: 14px; margin: 0; }
+.facts div { min-width: 0; }
+.facts dt { font: 600 10px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.facts dd { margin: 0; }
+.desc { margin: 0; font-size: 14px; max-width: 72ch; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; padding: 0; margin: 2px 0 0; list-style: none; }
+.tag { font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--raise); border: 0; cursor: pointer; }
+.tag:hover { background: var(--accent-soft); }
+.actions { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.count { font: 600 13px var(--font-mono); text-align: right; }
+.count small { display: block; color: var(--muted); font-weight: 500; font-size: 11px; }
+.mark { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 7px 10px; cursor: pointer; font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 8px; justify-content: flex-start; }
+.mark svg { width: 15px; height: 15px; flex: none; }
+.mark[aria-pressed="true"] { background: var(--plan-bg); border-color: var(--plan); color: var(--plan); }
+.mark.int[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.links { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; font-size: 13px; font-weight: 600; }
+.links button { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; font-weight: 600; font-size: 13px; text-decoration: underline; }
+@media (max-width: 760px) {
+  .ev { grid-template-columns: 54px minmax(0, 1fr); padding: 14px; gap: 12px; }
+  .date { padding-right: 10px; } .date .d { font-size: 24px; }
+  .actions { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--line); padding-top: 10px; }
+  .count { text-align: left; grid-column: 1 / -1; }
+  .links { grid-column: 1 / -1; justify-content: flex-start; }
+}
+
+.empty { border: 1px dashed var(--line); border-radius: 10px; padding: 34px 24px; text-align: center; color: var(--muted); }
+.empty strong { display: block; color: var(--fg); font: 700 18px var(--font-display); font-stretch: 85%; margin-bottom: 6px; }
+
+/* My Plan */
+.planhead { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 18px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.stat span { font: 600 10px var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.stat b { display: block; font: 700 26px/1.1 var(--font-display); font-stretch: 85%; margin-top: 4px; }
+.stat small { color: var(--muted); font-size: 13px; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+
+/* Panels (detail + admin) */
+.scrim { position: fixed; inset: 0; background: rgb(4 7 14 / .55); z-index: 20; }
+.panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(660px, 100%); background: var(--surface); z-index: 21; display: flex; flex-direction: column; border-left: 1px solid var(--line); padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.phead { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 20px; border-bottom: 1px solid var(--line); gap: 12px; }
+.phead h2 { margin: 0; font: 700 22px/1.15 var(--font-display); font-stretch: 85%; text-wrap: balance; }
+.ptabs { display: flex; gap: 4px; padding: 8px 20px 0; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.ptab { border: 0; background: none; padding: 8px 12px; cursor: pointer; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; white-space: nowrap; }
+.ptab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.pbody { overflow: auto; padding: 18px 20px 40px; flex: 1; display: flex; flex-direction: column; gap: 14px; }
+.form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form .full { grid-column: 1 / -1; }
+.form label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; min-width: 0; }
+.form input, .form select, .form textarea { padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); font-weight: 400; min-width: 0; width: 100%; }
+.form textarea { min-height: 92px; resize: vertical; }
+@media (max-width: 520px) { .form { grid-template-columns: 1fr; } }
+.catpick { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+.catgrid { display: flex; flex-wrap: wrap; gap: 6px; }
+.catgrid label { flex-direction: row; font-weight: 400; gap: 6px; align-items: center; border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; cursor: pointer; font-size: 13px; }
+.catgrid label:has(input:checked) { background: var(--accent-soft); border-color: var(--accent); }
+.catgrid input { accent-color: var(--accent); margin: 0; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.msg { font-size: 13px; padding: 8px 12px; border-radius: 7px; margin: 0; }
+.msg.ok { background: var(--ok-bg); color: var(--ok); }
+.msg.err { background: var(--bad-bg); color: var(--bad); }
+.qitem { border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.qitem h5 { margin: 0; font: 700 16px var(--font-display); font-stretch: 85%; }
+.qitem .meta { font: 500 12px var(--font-mono); color: var(--muted); }
+textarea.feed { width: 100%; min-height: 170px; font: 13px/1.4 var(--font-mono); padding: 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); }
+code { font-family: var(--font-mono); font-size: 12px; background: var(--raise); padding: 1px 5px; border-radius: 4px; }
+@media (prefers-reduced-motion: no-preference) { .mark, .ev { transition: border-color .15s, background-color .15s; } }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Trader Events <em>Desk</em></h1>
+      <p>Trading, fintech, trade and business events you can attend, with every time in BDST and UTC.</p>
+    </div>
+    <div class="clocks">
+      <div class="clock bd" aria-label="Bangladesh time"><span>BDST · UTC+6</span><b id="clkBd">--:--</b></div>
+      <div class="clock" aria-label="UTC time"><span>UTC</span><b id="clkUtc">--:--</b></div>
+      <button class="btn mobile-only" id="filterToggle" type="button" aria-expanded="false">Filters</button>
+      <button class="btn primary" id="adminBtn" type="button" hidden>Admin</button>
+    </div>
+  </header>
+</div>
+
+<div class="rail">
+  <div class="wrap rail-inner">
+    <div class="tabs" role="tablist" aria-label="Timeframe" id="tabs"></div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <input id="q" type="search" placeholder="Search events, cities, organisers" aria-label="Search events">
+    </div>
+  </div>
+</div>
+
+<div class="wrap layout" id="layout">
+  <aside class="filters collapsed" id="filters" aria-label="Filters"></aside>
+  <main id="main" aria-live="polite">
+    <div class="empty"><strong>Loading events</strong>Connecting to the event database.</div>
+  </main>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<section class="panel" id="panel" hidden aria-label="Panel">
+  <div class="phead"><h2 id="pTitle"></h2><button class="btn ghost small" id="closePanel" type="button">Close</button></div>
+  <div class="ptabs" role="tablist" id="ptabs" hidden>
+    <button class="ptab" role="tab" data-p="queue" type="button">Review queue</button>
+    <button class="ptab" role="tab" data-p="edit" type="button">Add event</button>
+    <button class="ptab" role="tab" data-p="import" type="button">Import feed</button>
+    <button class="ptab" role="tab" data-p="runs" type="button">AI &amp; discovery</button>
+  </div>
+  <div class="pbody" id="pbody"></div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="/backend.js"></script>
+<script>
+// Hybrid taxonomy (trading + trade/SaaS/fintech + business) and auto-classifier.
+// Shared by the portal and the seed builder. Group 0 holds the trading niches.
+var TAXONOMY = [
+  { id: "trading", name: "Financial Markets & Trading", cats: [
+    { id: "forex", name: "Forex Trading", kw: ["forex", "fx", "currency", "currencies", "cfd", "cfds", "eurusd", "online trading", "intraday", "marktanalyse", "trading plan", "trading-plan", "price action", "technical analysis"] },
+    { id: "crypto", name: "Crypto & Web3 Trading", kw: ["crypto", "bitcoin", "blockchain", "web3", "defi", "stablecoin", "stablecoins", "digital assets", "tokenization", "tokenized", "rwa", "altcoin", "crypto exchanges"] },
+    { id: "gold", name: "Gold & Precious Metals", kw: ["gold", "silver", "precious metals", "bullion", "commodities", "xauusd"] },
+    { id: "signals", name: "Signal-Based Trading", kw: ["signal", "signals", "copy trading", "social trading", "trade alerts", "trading creators", "mirror trading"] },
+    { id: "prop", name: "Prop Firm Trading", kw: ["prop", "prop firm", "prop firms", "prop traders", "proprietary trading", "funded trader", "funded account", "funded accounts", "trading challenge"] },
+    { id: "algo", name: "Algorithmic & Quant Trading", kw: ["algorithmic", "algo", "quant", "quantitative", "automated trading", "trading bots", "expert advisor", "ai trading", "ai and quant"] }
+  ]},
+  { id: "tradesaas", name: "Trade, SaaS & Fintech", cats: [
+    { id: "trade-automation", name: "Trade Automation", kw: ["trade automation", "trading automation", "tradetech", "rpa", "robotic process", "workflow automation"] },
+    { id: "trade-services", name: "Trade Services", kw: ["trade finance", "export finance", "trade services", "letters of credit", "supply chain finance", "commodity finance", "gtr", "sibos", "cash management", "treasury", "correspondent banking"] },
+    { id: "global-trade", name: "Global Trade & Import/Export", kw: ["import", "export", "trade fair", "canton fair", "international trade", "cross-border", "customs", "tariff", "sourcing", "overseas buyers", "exporters", "trade show", "logistics", "supply chain", "shipping", "container", "freight", "intralogistics"] },
+    { id: "saas", name: "SaaS Products", kw: ["saas", "software as a service", "b2b software", "arr", "subscription", "go-to-market", "saastr", "product-led"] },
+    { id: "fintech", name: "FinTech", kw: ["fintech", "payments", "banking", "money20/20", "digital banking", "open banking", "neobank", "broker", "brokers", "liquidity", "trading platform", "metatrader", "payment providers", "financial services"] },
+    { id: "embedded-finance", name: "Embedded Finance", kw: ["embedded finance", "banking-as-a-service", "baas", "embedded payments", "super-app", "open finance", "api economy"] },
+    { id: "regtech", name: "RegTech & Compliance", kw: ["regtech", "regulatory", "regulation", "compliance", "aml", "kyc", "regulator", "regulators", "dora", "governance"] }
+  ]},
+  { id: "business", name: "Business, Economy & Leadership", cats: [
+    { id: "macro", name: "World Economy & Macro Trends", kw: ["world economy", "global economy", "macro", "geopolitic", "economic forum", "davos", "central bank", "interest rates", "inflation", "market structure", "outlook", "public-private", "capital markets", "securities", "post-trade"] },
+    { id: "business-growth", name: "Business Growth", kw: ["growth", "scaleup", "scale-up", "sme", "msmes", "expansion", "market entry", "export diversification"] },
+    { id: "leadership", name: "Corporate Leadership", kw: ["leaders", "leadership", "c-suite", "ceo", "executives", "c-level", "coo", "cio", "decision-makers"] },
+    { id: "vc-funding", name: "Venture Capital & Funding", kw: ["venture", "investors", "vc", "funding", "pitch", "angel", "startups", "startup", "founders"] },
+    { id: "wealth", name: "Wealth Management", kw: ["wealth", "family office", "family offices", "private wealth", "asset management", "portfolio", "sovereign wealth", "income investing", "investing"] },
+    { id: "digital-transformation", name: "Enterprise Digital Transformation", kw: ["digital transformation", "digitalisation", "digitalization", "industry 4.0", "smart cities", "digital economy", "cloud", "data centres", "data centers", "artificial intelligence", "ai", "agentic", "generative", "enterprise", "ecommerce", "e-commerce", "omnichannel", "retail technology"] }
+  ]}
+];
+
+function _kwRegex(k) {
+  var esc = k.replace(/[.*+?^${}()|[\]\\\/]/g, "\\$&");
+  return new RegExp("(^|[^a-z0-9])" + esc + "([^a-z0-9]|$)", "i");
+}
+
+// Title hits weigh 2, description hits 1; keep the top 5.
+// niche = the strongest category; a trading category wins ties.
+function classifyEvent(title, description) {
+  var t = (title || "").toLowerCase(), d = (description || "").toLowerCase(), scores = {};
+  TAXONOMY.forEach(function (g) {
+    g.cats.forEach(function (c) {
+      var s = 0;
+      c.kw.forEach(function (k) { var re = _kwRegex(k); if (re.test(t)) s += 2; if (re.test(d)) s += 1; });
+      if (s > 0) scores[c.id] = s;
+    });
+  });
+  var cats = Object.keys(scores).sort(function (a, b) { return scores[b] - scores[a]; }).slice(0, 5);
+  var tradingIds = TAXONOMY[0].cats.map(function (c) { return c.id; });
+  var top = cats.length ? scores[cats[0]] : 0;
+  var niche = cats.filter(function (c) { return tradingIds.indexOf(c) >= 0 && scores[c] >= top; })[0] || cats[0] || "";
+  return { categories: cats, niche: niche, groups: groupsFor(cats), scores: scores };
+}
+
+function groupsFor(catIds) {
+  return TAXONOMY.filter(function (g) { return g.cats.some(function (c) { return catIds.indexOf(c.id) >= 0; }); }).map(function (g) { return g.id; });
+}
+
+if (typeof module !== "undefined") module.exports = { TAXONOMY: TAXONOMY, classifyEvent: classifyEvent, groupsFor: groupsFor };
+
+
+(function () {
+  var TF = [
+    { id: "30", label: "Next 30 days", days: 30 },
+    { id: "60", label: "60 days", days: 60 },
+    { id: "90", label: "90 days", days: 90 },
+    { id: "180", label: "6 months", days: 182 },
+    { id: "365", label: "1 year & long-term", days: 36500 }
+  ];
+  var FORMATS = ["In-person", "Virtual", "Hybrid"];
+  var STATUSES = ["Registration Open", "Early Bird", "Upcoming", "Application Only", "Invite Only", "Sold Out", "Closed"];
+  var TICKER = { forex: "FX", crypto: "CRYPTO", gold: "XAU", signals: "SIGNALS", prop: "PROP", algo: "ALGO", "trade-automation": "AUTO", "trade-services": "TRADEFIN", "global-trade": "TRADE", saas: "SAAS", fintech: "FINTECH", "embedded-finance": "EMBED", regtech: "REGTECH", macro: "MACRO", "business-growth": "GROWTH", leadership: "LEAD", "vc-funding": "VC", wealth: "WEALTH", "digital-transformation": "DIGITAL" };
+  var CAT = {}; TAXONOMY.forEach(function (g) { g.cats.forEach(function (c) { CAT[c.id] = c.name; }); });
+  var BD = "Asia/Dhaka";
+
+  var S = {
+    events: [], loaded: false, db: null, uid: null, canEdit: false, showPending: false,
+    view: "90", q: "", cats: new Set(), formats: new Set(), statuses: new Set(), freeOnly: false,
+    plan: {}, planMode: "local", planDoc: null,
+    panel: null, ptab: "queue", editing: null, detailId: null, parsed: [], msg: null, armed: null, runs: []
+  };
+  try { var v = localStorage.getItem("ted.view"); if (v) S.view = v; } catch (e) {}
+
+  var $ = function (s) { return document.querySelector(s); };
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  function slug(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "event"; }
+  var MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  var MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+  // ---------- Time zones ----------
+  function partsIn(tz, ms) {
+    var f = new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    var o = {}; f.formatToParts(new Date(ms)).forEach(function (p) { o[p.type] = p.value; }); return o;
+  }
+  function offsetMin(tz, ms) {
+    var p = partsIn(tz, ms);
+    return (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour % 24, +p.minute, +p.second) - Math.floor(ms / 1000) * 1000) / 60000;
+  }
+  function validTz(tz) { try { new Intl.DateTimeFormat("en-US", { timeZone: tz }); return true; } catch (e) { return false; } }
+  // Local wall-clock time in an IANA zone -> UTC Date
+  function zonedToUtc(date, time, tz) {
+    if (!validTz(tz)) tz = "UTC";
+    var d = date.split("-").map(Number), t = (time || "00:00").split(":").map(Number);
+    var guess = Date.UTC(d[0], d[1] - 1, d[2], t[0], t[1]);
+    var off = offsetMin(tz, guess), utc = guess - off * 60000, off2 = offsetMin(tz, utc);
+    if (off2 !== off) utc = guess - off2 * 60000;
+    return new Date(utc);
+  }
+  function fmtIn(tz, date, withTime) {
+    var o = { timeZone: tz, weekday: "short", day: "numeric", month: "short" };
+    if (withTime) { o.hour = "2-digit"; o.minute = "2-digit"; o.hourCycle = "h23"; }
+    return new Intl.DateTimeFormat("en-GB", o).format(date).replace(",", "");
+  }
+  function hhmm(tz, date) { return new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(date); }
+  function tzLabel(tz) {
+    if (/^Etc\/GMT[+-]\d+$/.test(tz)) { var n = -parseInt(tz.slice(7), 10); return "GMT" + (n >= 0 ? "+" : "") + n; }
+    return tz.split("/").pop().replace(/_/g, " ") + " time";
+  }
+  function dateOnly(s) { var p = s.split("-").map(Number); return new Date(Date.UTC(p[0], p[1] - 1, p[2], 12)); }
+  function dayLabel(s) { return new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short", year: "numeric" }).format(dateOnly(s)).replace(",", ""); }
+  // Returns rows for BDST and UTC
+  function timeRows(ev) {
+    var multi = ev.end && ev.end !== ev.start;
+    if (ev.startTime) {
+      var s = zonedToUtc(ev.start, ev.startTime, ev.tz || "UTC");
+      var e = ev.endTime ? zonedToUtc(ev.end || ev.start, ev.endTime, ev.tz || "UTC") : null;
+      function row(tz) {
+        var txt = fmtIn(tz, s, true);
+        if (e && multi) txt += " → " + fmtIn(tz, e, true);
+        else if (e) txt += "–" + hhmm(tz, e);
+        else if (multi) txt += " → " + dayLabel(ev.end).replace(/ \d{4}$/, "");
+        return txt;
+      }
+      return { bd: row(BD), utc: row("UTC"), timed: true, local: (ev.startTime + (ev.endTime ? "–" + ev.endTime : "")) + " " + tzLabel(ev.tz || "UTC") + (multi ? " daily" : "") };
+    }
+    var span = multi ? dayLabel(ev.start).replace(/ \d{4}$/, "") + " → " + dayLabel(ev.end) : dayLabel(ev.start);
+    return { bd: span + " · time not published", utc: span + " · time not published", timed: false, local: "" };
+  }
+  function startMs(ev) { return ev.startTime ? +zonedToUtc(ev.start, ev.startTime, ev.tz || "UTC") : +zonedToUtc(ev.start, "00:00", ev.tz || "UTC"); }
+  function endMs(ev) {
+    var end = ev.end || ev.start;
+    if (ev.endTime) return +zonedToUtc(end, ev.endTime, ev.tz || "UTC");
+    if (ev.startTime && end === ev.start) return startMs(ev) + 2 * 3600e3; // single session: assume it is over two hours after start
+    return +zonedToUtc(end, "23:59", ev.tz || "UTC");
+  }
+  function isLive(ev) { var n = Date.now(); return startMs(ev) <= n && endMs(ev) >= n; }
+  function isPast(ev) { return endMs(ev) < Date.now(); }
+  function isLongTerm(ev) { return startMs(ev) > Date.now() + 365 * 864e5; }
+  function inWindow(ev, days) { return !isPast(ev) && startMs(ev) <= Date.now() + days * 864e5; }
+
+  // ---------- Data views ----------
+  function visible(ev) { return ev.approved || (S.canEdit && S.showPending); }
+  function pool() { return S.events.filter(visible); }
+  function matches(ev, skip) {
+    if (S.q) {
+      var hay = [ev.title, ev.organizer, ev.city, ev.country, ev.venue, ev.description, ev.cost, ev.language].concat((ev.categories || []).map(function (c) { return CAT[c] || c; })).join(" ").toLowerCase();
+      if (!S.q.toLowerCase().split(/\s+/).filter(Boolean).every(function (w) { return hay.indexOf(w) >= 0; })) return false;
+    }
+    if (skip !== "cats" && S.cats.size && !(ev.categories || []).some(function (c) { return S.cats.has(c); })) return false;
+    if (skip !== "formats" && S.formats.size && !S.formats.has(ev.format)) return false;
+    if (skip !== "statuses" && S.statuses.size && !S.statuses.has(ev.status)) return false;
+    if (skip !== "free" && S.freeOnly && ev.costMin !== 0) return false;
+    return true;
+  }
+  function days() { var t = TF.find(function (x) { return x.id === S.view; }); return t ? t.days : 90; }
+  function byStart(a, b) { return startMs(a) - startMs(b) || a.title.localeCompare(b.title); }
+  function results() { var d = days(); return pool().filter(function (e) { return inWindow(e, d) && matches(e); }).sort(byStart); }
+  function planned() { return S.events.filter(function (e) { return S.plan[e.id]; }).sort(byStart); }
+
+  // ---------- Render ----------
+  function renderTabs() {
+    var base = pool().filter(function (e) { return matches(e); });
+    var h = TF.map(function (t) {
+      var n = base.filter(function (e) { return inWindow(e, t.days); }).length;
+      return '<button class="tab" role="tab" type="button" data-view="' + t.id + '" aria-selected="' + (S.view === t.id) + '">' + esc(t.label) + '<span class="n">' + n + '</span></button>';
+    }).join("");
+    var pn = Object.keys(S.plan).filter(function (id) { return S.events.some(function (e) { return e.id === id; }); }).length;
+    h += '<span class="sep" aria-hidden="true"></span><button class="tab plan" role="tab" type="button" data-view="plan" aria-selected="' + (S.view === "plan") + '">My plan<span class="n">' + pn + '</span></button>';
+    $("#tabs").innerHTML = h;
+  }
+  function countFor(kind, val) {
+    var d = days();
+    return pool().filter(function (e) {
+      if (!inWindow(e, d) || !matches(e, kind)) return false;
+      if (kind === "cats") return (e.categories || []).indexOf(val) >= 0;
+      if (kind === "formats") return e.format === val;
+      if (kind === "free") return e.costMin === 0;
+      return e.status === val;
+    }).length;
+  }
+  function chk(kind, val, label) {
+    var id = "f-" + kind + "-" + slug(val);
+    return '<label class="chk" for="' + id + '"><input type="checkbox" id="' + id + '" data-k="' + kind + '" value="' + esc(val) + '"' + (S[kind].has(val) ? " checked" : "") + '><span>' + esc(label) + '</span><span class="c">' + countFor(kind, val) + '</span></label>';
+  }
+  var open = { cats: true, statuses: true, formats: true, cost: true };
+  function renderFilters() {
+    var f = $("#filters");
+    if (S.view === "plan") { f.hidden = true; $("#layout").classList.add("noside"); return; }
+    f.hidden = false; $("#layout").classList.remove("noside");
+    var h = '<details data-s="cats"' + (open.cats ? " open" : "") + '><summary>Category</summary><div class="fbody">' +
+      TAXONOMY.map(function (g) { return '<div class="grp">' + esc(g.name) + '</div>' + g.cats.map(function (c) { return chk("cats", c.id, c.name); }).join(""); }).join("") + '</div></details>';
+    h += '<details data-s="statuses"' + (open.statuses ? " open" : "") + '><summary>Status</summary><div class="fbody">' + STATUSES.map(function (s) { return chk("statuses", s, s); }).join("") + '</div></details>';
+    h += '<details data-s="formats"' + (open.formats ? " open" : "") + '><summary>Format</summary><div class="fbody">' + FORMATS.map(function (s) { return chk("formats", s, s === "In-person" ? "In-person" : s === "Virtual" ? "Online / Virtual" : "Hybrid"); }).join("") + '</div></details>';
+    h += '<details data-s="cost"' + (open.cost ? " open" : "") + '><summary>Cost</summary><div class="fbody"><label class="chk" for="f-free"><input type="checkbox" id="f-free"' + (S.freeOnly ? " checked" : "") + '><span>Free to attend</span><span class="c">' + countFor("free") + '</span></label></div></details>';
+    if (S.canEdit) h += '<label class="chk" for="showPend"><input type="checkbox" id="showPend"' + (S.showPending ? " checked" : "") + '><span>Show events awaiting approval</span></label>';
+    h += '<button class="btn small" type="button" id="clearAll">Clear filters</button>';
+    var st = f.scrollTop; f.innerHTML = h; f.scrollTop = st;
+  }
+
+  function stClass(s) { return { "Registration Open": "s-open", "Early Bird": "s-early", "Upcoming": "s-upcoming", "Application Only": "s-app", "Invite Only": "s-app", "Sold Out": "s-sold", "Closed": "s-closed" }[s] || "s-upcoming"; }
+  function countdown(ev) {
+    if (isLive(ev)) return "Live now<small>happening today</small>";
+    if (isPast(ev)) return "Ended<small>" + dayLabel(ev.end || ev.start) + "</small>";
+    var h = (startMs(ev) - Date.now()) / 3600e3;
+    if (h < 24) return "In " + Math.max(1, Math.round(h)) + " h<small>starts soon</small>";
+    var d = Math.round(h / 24);
+    return (d < 60 ? "In " + d + " days" : "In " + Math.round(d / 7) + " weeks") + "<small>" + dayLabel(ev.start) + "</small>";
+  }
+  var ICON_STAR = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8L3.5 9.7l5.9-.9z"/></svg>';
+  var ICON_EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  function markButtons(ev) {
+    var st = S.plan[ev.id] && S.plan[ev.id].state;
+    return '<button class="mark" type="button" data-mark="going" data-id="' + esc(ev.id) + '" aria-pressed="' + (st === "going") + '">' + ICON_STAR + (st === "going" ? "Attending" : "Plan to attend") + '</button>' +
+      '<button class="mark int" type="button" data-mark="interested" data-id="' + esc(ev.id) + '" aria-pressed="' + (st === "interested") + '">' + ICON_EYE + (st === "interested" ? "Interested" : "Mark interested") + '</button>';
+  }
+  function where(ev) {
+    if (ev.format === "Virtual") return "Online / Virtual";
+    var parts = [ev.venue, ev.city, ev.country].filter(Boolean);
+    return parts.join(", ") + (ev.format === "Hybrid" ? " · also online" : "");
+  }
+  function pills(ev) {
+    var p = [];
+    if (isLive(ev)) p.push('<span class="pill p-live">Live now</span>');
+    p.push('<span class="pill ' + stClass(ev.status) + '">' + esc(ev.status) + '</span>');
+    p.push(ev.format === "Virtual" ? '<span class="pill p-virtual">Virtual</span>' : '<span class="pill p-format">' + esc(ev.format) + '</span>');
+    if (ev.costMin === 0) p.push('<span class="pill s-open">Free entry</span>');
+    if (isLongTerm(ev)) p.push('<span class="pill p-format">12+ months out</span>');
+    if (ev.dateConfidence === "tentative") p.push('<span class="pill p-format">Dates TBC</span>');
+    if (ev.language && ev.language !== "English") p.push('<span class="pill p-format">' + esc(ev.language) + '</span>');
+    if (!ev.approved) p.push('<span class="pill p-pend">Awaiting approval</span>');
+    return p.join("");
+  }
+  function card(ev) {
+    var tr = timeRows(ev), d = dateOnly(ev.start);
+    var tags = (ev.categories || []).map(function (c) { return CAT[c] ? '<li><button class="tag" type="button" data-cat="' + c + '">' + esc(CAT[c]) + '</button></li>' : ""; }).join("");
+    return '<article class="ev' + (ev.approved ? "" : " pending") + (S.plan[ev.id] ? " marked" : "") + '">' +
+      '<div class="date"><span class="d">' + d.getUTCDate() + '</span><span class="m">' + MON[d.getUTCMonth()].toUpperCase() + '</span>' + (ev.niche ? '<span class="ticker" title="' + esc(CAT[ev.niche] || "") + '">' + esc(TICKER[ev.niche] || "") + '</span>' : "") + '</div>' +
+      '<div class="body"><div class="pills">' + pills(ev) + '</div>' +
+      '<h4><button type="button" data-detail="' + esc(ev.id) + '">' + esc(ev.title) + '</button></h4>' +
+      '<p class="org">' + esc(ev.organizer || "") + '</p>' +
+      '<dl class="times"><dt class="bd">BDST</dt><dd>' + esc(tr.bd) + '</dd><dt>UTC</dt><dd>' + esc(tr.utc) + '</dd></dl>' +
+      '<dl class="facts"><div><dt>Location</dt><dd>' + esc(where(ev)) + '</dd></div><div><dt>Cost</dt><dd>' + esc(ev.cost || "Not published") + '</dd></div></dl>' +
+      (ev.description ? '<p class="desc">' + esc(ev.description) + '</p>' : "") +
+      '<ul class="tags">' + tags + '</ul></div>' +
+      '<div class="actions"><span class="count">' + countdown(ev) + '</span>' + markButtons(ev) +
+      '<div class="links"><button type="button" data-detail="' + esc(ev.id) + '">Details</button>' + (ev.url ? '<a href="' + esc(ev.url) + '" target="_blank" rel="noopener">Event site ↗</a>' : "") +
+      (S.canEdit ? '<button type="button" data-edit="' + esc(ev.id) + '">Edit</button>' : "") + '</div></div></article>';
+  }
+  function groupList(list) {
+    var html = "", cur = "";
+    list.forEach(function (ev) {
+      var k = ev.start.slice(0, 7);
+      if (k !== cur) { cur = k; var d = dateOnly(ev.start); html += '<div class="month"><h3>' + MONTHS[d.getUTCMonth()] + " " + d.getUTCFullYear() + '</h3></div>'; }
+      html += card(ev);
+    });
+    return html;
+  }
+  function renderMain() {
+    var m = $("#main");
+    if (!S.loaded) return;
+    if (S.view === "plan") return renderPlan();
+    if (!S.db && !S.events.length) { m.innerHTML = '<div class="empty"><strong>Event list unavailable</strong>Couldn’t reach the event database. Check the Supabase settings in Vercel, then reload.</div>'; return; }
+    var list = results(), t = TF.find(function (x) { return x.id === S.view; }) || TF[2];
+    var until = new Date(Date.now() + t.days * 864e5);
+    var lt = t.id === "365", ltCount = lt ? list.filter(isLongTerm).length : 0;
+    var head = '<div class="summary"><h2>' + list.length + " event" + (list.length === 1 ? "" : "s") + (lt ? " in the next year and beyond" : " in the " + (t.id === "30" ? "next 30 days" : "next " + t.label)) + '</h2><span class="sub">' + (lt ? ltCount + " more than 12 months out" : "through " + fmtIn(BD, until, false) + " " + until.getFullYear()) + '</span></div>';
+    if (!S.events.length) { m.innerHTML = head + '<div class="empty"><strong>No events yet</strong>' + (S.canEdit ? "Open Admin to add an event or import a feed." : "Events appear here once they are added.") + '</div>'; return; }
+    if (!list.length) { m.innerHTML = head + '<div class="empty"><strong>Nothing matches</strong>Try a longer timeframe or clear a filter.</div>'; return; }
+    m.innerHTML = head + groupList(list);
+  }
+  function renderPlan() {
+    var m = $("#main"), all = planned();
+    var going = all.filter(function (e) { return S.plan[e.id].state === "going"; }), intr = all.filter(function (e) { return S.plan[e.id].state === "interested"; });
+    var next = going.filter(function (e) { return !isPast(e); })[0];
+    var h = '<div class="summary"><h2>My plan</h2><span class="sub">' + (S.planMode === "cloud" ? "Saved to your account, private to you" : "Saved in this browser only") + '</span></div>';
+    h += '<div class="planhead"><div class="stat"><span>Plan to attend</span><b>' + going.length + '</b></div><div class="stat"><span>Interested</span><b>' + intr.length + '</b></div>' +
+      '<div class="stat"><span>Next on your plan</span><b style="font-size:17px">' + (next ? esc(next.title) : "Nothing yet") + '</b>' + (next ? '<small>' + esc(timeRows(next).bd) + ' BDST</small>' : "") + '</div></div>';
+    if (!all.length) { m.innerHTML = h + '<div class="empty"><strong>Your plan is empty</strong>Use “Plan to attend” or “Mark interested” on any event and it will appear here.</div>'; return; }
+    if (going.length) h += '<div class="month"><h3>Plan to attend · ' + going.length + '</h3></div>' + going.map(card).join("");
+    if (intr.length) h += '<div class="month"><h3>Interested · ' + intr.length + '</h3></div>' + intr.map(card).join("");
+    m.innerHTML = h;
+  }
+  function renderAll() { renderTabs(); renderFilters(); renderMain(); if (S.panel === "detail") renderDetail(); else if (S.panel === "admin" && S.ptab !== "edit") renderAdmin(); }
+
+  // ---------- Clocks ----------
+  function tick() { var n = new Date(); $("#clkBd").textContent = hhmm(BD, n); $("#clkUtc").textContent = hhmm("UTC", n); }
+  tick(); setInterval(tick, 15000);
+
+  // ---------- Planner ----------
+  var writing = Promise.resolve();
+  function saveLocal() { try { localStorage.setItem("ted.plan", JSON.stringify(S.plan)); } catch (e) {} }
+  function loadLocal() { try { return JSON.parse(localStorage.getItem("ted.plan") || "{}") || {}; } catch (e) { return {}; } }
+  function toggleMark(id, state) {
+    var cur = S.plan[id] && S.plan[id].state;
+    var next = Object.assign({}, S.plan);
+    if (cur === state) delete next[id]; else next[id] = { state: state, at: new Date().toISOString() };
+    S.plan = next; renderAll();
+    if (S.planMode === "cloud") {
+      var snapshot = next;
+      writing = writing.then(function () { return S.planDoc.set({ items: snapshot, updatedAt: new Date().toISOString() }); })
+        .catch(function () { S.planMode = "local"; saveLocal(); renderAll(); });
+    } else saveLocal();
+  }
+
+  // ---------- Detail ----------
+  function gcalUrl(ev) {
+    var dates;
+    if (ev.startTime) {
+      var s = new Date(startMs(ev)), e = new Date(endMs(ev));
+      var f = function (d) { return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, ""); };
+      dates = f(s) + "/" + f(e);
+    } else {
+      var end = dateOnly(ev.end || ev.start); end.setUTCDate(end.getUTCDate() + 1);
+      dates = ev.start.replace(/-/g, "") + "/" + end.toISOString().slice(0, 10).replace(/-/g, "");
+    }
+    return "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(ev.title) + "&dates=" + dates +
+      "&details=" + encodeURIComponent((ev.description || "") + (ev.url ? "\n\n" + ev.url : "")) + "&location=" + encodeURIComponent(where(ev));
+  }
+  function renderDetail() {
+    var ev = S.events.find(function (e) { return e.id === S.detailId; });
+    if (!ev) { closePanel(); return; }
+    $("#pTitle").textContent = ev.title; $("#ptabs").hidden = true;
+    var tr = timeRows(ev);
+    $("#pbody").innerHTML = '<div class="pills">' + pills(ev) + '</div>' +
+      '<dl class="times"><dt class="bd">BDST</dt><dd>' + esc(tr.bd) + '</dd><dt>UTC</dt><dd>' + esc(tr.utc) + '</dd>' + (tr.local ? '<dt>LOCAL</dt><dd>' + esc(tr.local) + '</dd>' : "") + '</dl>' +
+      (tr.timed ? "" : '<p class="note">The organiser has not published session times. Dates are shown as listed for the host city.</p>') +
+      '<dl class="facts"><div><dt>Organiser</dt><dd>' + esc(ev.organizer || "Not listed") + '</dd></div><div><dt>Location</dt><dd>' + esc(where(ev)) + '</dd></div>' +
+      '<div><dt>Cost & tickets</dt><dd>' + esc(ev.cost || "Not published") + '</dd></div><div><dt>Language</dt><dd>' + esc(ev.language || "English") + '</dd></div>' +
+      '<div><dt>Primary category</dt><dd>' + esc(CAT[ev.niche] || "Not set") + '</dd></div><div><dt>Status</dt><dd>' + esc(ev.status) + '</dd></div></dl>' +
+      '<div><div class="facts"><div><dt>What you will learn or experience</dt></div></div><p class="desc" style="margin-top:4px">' + esc(ev.description || "No description yet.") + '</p></div>' +
+      '<ul class="tags">' + (ev.categories || []).map(function (c) { return '<li><span class="tag">' + esc(CAT[c] || c) + '</span></li>'; }).join("") + '</ul>' +
+      '<div class="row">' + markButtons(ev) + '</div>' +
+      '<div class="row">' + (ev.url ? '<a class="btn primary" href="' + esc(ev.url) + '" target="_blank" rel="noopener">Register on event site ↗</a>' : "") +
+      '<a class="btn" href="' + esc(gcalUrl(ev)) + '" target="_blank" rel="noopener">Add to Google Calendar ↗</a>' +
+      (S.canEdit ? '<button class="btn" type="button" data-edit="' + esc(ev.id) + '">Edit</button>' : "") + '</div>' +
+      '<p class="note">Costs, visas and travel are the attendee’s responsibility. Confirm details with the organiser before booking.</p>';
+  }
+
+  // ---------- Panel plumbing ----------
+  function openPanel(kind, opts) {
+    S.panel = kind; S.msg = null; S.armed = null;
+    if (kind === "detail") S.detailId = opts;
+    $("#panel").hidden = false; $("#scrim").hidden = false;
+    if (kind === "detail") renderDetail(); else renderAdmin();
+    $("#closePanel").focus();
+  }
+  function closePanel() { S.panel = null; $("#panel").hidden = true; $("#scrim").hidden = true; S.editing = null; }
+  $("#closePanel").addEventListener("click", closePanel);
+  $("#scrim").addEventListener("click", closePanel);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && S.panel) closePanel(); });
+  $("#adminBtn").addEventListener("click", function () { S.ptab = "queue"; openPanel("admin"); });
+  $("#ptabs").addEventListener("click", function (e) { var b = e.target.closest("[data-p]"); if (!b) return; S.ptab = b.dataset.p; S.msg = null; S.armed = null; if (S.ptab === "edit") S.editing = null; renderAdmin(); });
+
+  // ---------- Admin ----------
+  function renderAdmin() {
+    $("#pTitle").textContent = "Admin dashboard"; $("#ptabs").hidden = false;
+    document.querySelectorAll(".ptab").forEach(function (b) { b.setAttribute("aria-selected", String(b.dataset.p === S.ptab)); });
+    $('.ptab[data-p="edit"]').textContent = S.editing && S.editing.id ? "Edit event" : "Add event";
+    var b = $("#pbody");
+    if (S.ptab === "queue") b.innerHTML = queueHTML();
+    else if (S.ptab === "edit") b.innerHTML = formHTML(S.editing || { format: "In-person", status: "Registration Open", tz: "UTC", language: "English", dateConfidence: "confirmed", categories: [] });
+    else if (S.ptab === "import") b.innerHTML = importHTML();
+    else b.innerHTML = runsHTML();
+  }
+  function msgHTML() { return S.msg ? '<p class="msg ' + S.msg[0] + '">' + esc(S.msg[1]) + '</p>' : ""; }
+  function queueHTML() {
+    var pend = S.events.filter(function (e) { return !e.approved; }).sort(byStart);
+    var h = '<p class="note">Events found by the daily discovery job or imported from feeds wait here with auto-assigned niche and categories. Approve to publish, edit to fix the classification, or reject.</p>' + msgHTML();
+    if (!pend.length) return h + '<div class="empty"><strong>Queue is clear</strong>Every event in the database is approved.</div>';
+    return h + pend.map(function (e) {
+      return '<div class="qitem"><h5>' + esc(e.title) + '</h5><span class="meta">' + esc(timeRows(e).bd) + ' BDST · ' + esc(where(e)) + ' · ' + esc(e.source || "manual") + '</span>' +
+        '<ul class="tags">' + (e.categories || []).map(function (c) { return '<li><span class="tag">' + esc(CAT[c] || c) + '</span></li>'; }).join("") + '</ul>' +
+        (e.sourceUrl ? '<a class="meta" href="' + esc(e.sourceUrl) + '" target="_blank" rel="noopener">Found at ' + esc(e.sourceUrl) + '</a>' : "") +
+        '<div class="row"><button class="btn small primary" type="button" data-approve="' + esc(e.id) + '">Approve</button><button class="btn small" type="button" data-edit="' + esc(e.id) + '">Edit</button>' +
+        (S.armed === e.id ? '<button class="btn small danger" type="button" data-reject="' + esc(e.id) + '">Confirm reject</button><button class="btn small ghost" type="button" data-disarm="1">Keep</button>' : '<button class="btn small danger" type="button" data-arm="' + esc(e.id) + '">Reject</button>') + '</div></div>';
+    }).join("");
+  }
+  function opt(list, v) { return list.map(function (x) { return '<option' + (x === v ? " selected" : "") + '>' + esc(x) + '</option>'; }).join(""); }
+  var TZS = ["Asia/Dhaka", "UTC", "Asia/Dubai", "Asia/Riyadh", "Asia/Kolkata", "Asia/Singapore", "Asia/Hong_Kong", "Asia/Bangkok", "Asia/Manila", "Asia/Kuala_Lumpur", "Asia/Tashkent", "Europe/London", "Europe/Berlin", "Europe/Nicosia", "Europe/Lisbon", "America/New_York", "America/Chicago", "America/Los_Angeles", "America/Mexico_City", "Africa/Johannesburg", "Africa/Lagos", "Australia/Sydney", "Etc/GMT-2", "Etc/GMT-1"];
+  function formHTML(e) {
+    var cats = e.categories || [], isEdit = !!e.id, tzs = TZS.indexOf(e.tz) >= 0 ? TZS : TZS.concat([e.tz]);
+    var h = '<form class="form" id="evForm" novalidate>' + (S.msg ? '<p class="msg full ' + S.msg[0] + '">' + esc(S.msg[1]) + '</p>' : "");
+    h += '<label class="full" for="e-title">Event name<input id="e-title" name="title" value="' + esc(e.title) + '"></label>';
+    h += '<label for="e-org">Organiser<input id="e-org" name="organizer" value="' + esc(e.organizer) + '"></label>';
+    h += '<label for="e-url">Website<input id="e-url" name="url" type="url" placeholder="https://" value="' + esc(e.url) + '"></label>';
+    h += '<label for="e-start">Start date<input id="e-start" name="start" type="date" value="' + esc(e.start) + '"></label>';
+    h += '<label for="e-end">End date<input id="e-end" name="end" type="date" value="' + esc(e.end) + '"></label>';
+    h += '<label for="e-st">Start time (local, optional)<input id="e-st" name="startTime" type="time" value="' + esc(e.startTime) + '"></label>';
+    h += '<label for="e-et">End time (optional)<input id="e-et" name="endTime" type="time" value="' + esc(e.endTime) + '"></label>';
+    h += '<label class="full" for="e-tz">Event time zone<select id="e-tz" name="tz">' + opt(tzs, e.tz) + '</select></label>';
+    h += '<label for="e-format">Format<select id="e-format" name="format">' + opt(FORMATS, e.format) + '</select></label>';
+    h += '<label for="e-status">Status<select id="e-status" name="status">' + opt(STATUSES, e.status) + '</select></label>';
+    h += '<label for="e-venue">Venue<input id="e-venue" name="venue" value="' + esc(e.venue) + '"></label>';
+    h += '<label for="e-city">City<input id="e-city" name="city" value="' + esc(e.city) + '"></label>';
+    h += '<label for="e-country">Country<input id="e-country" name="country" value="' + esc(e.country) + '"></label>';
+    h += '<label for="e-lang">Language<input id="e-lang" name="language" value="' + esc(e.language || "English") + '"></label>';
+    h += '<label for="e-cost">Cost / tickets<input id="e-cost" name="cost" placeholder="Free; VIP $199" value="' + esc(e.cost) + '"></label>';
+    h += '<label for="e-costmin">Lowest price (USD, 0 = free)<input id="e-costmin" name="costMin" type="number" min="0" step="1" value="' + (e.costMin == null ? "" : esc(e.costMin)) + '"></label>';
+    h += '<label class="full" for="e-desc">What participants learn or experience<textarea id="e-desc" name="description">' + esc(e.description) + '</textarea></label>';
+    h += '<div class="full catpick"><div class="row" style="justify-content:space-between;margin-bottom:6px"><strong style="font-size:13px">Categories</strong><button class="btn small" type="button" id="autoTag">Auto-tag from text</button></div>' +
+      TAXONOMY.map(function (g) { return '<div class="grp">' + esc(g.name) + '</div><div class="catgrid">' + g.cats.map(function (c) { return '<label for="cat-' + c.id + '"><input type="checkbox" id="cat-' + c.id + '" name="cat" value="' + c.id + '"' + (cats.indexOf(c.id) >= 0 ? " checked" : "") + '>' + esc(c.name) + '</label>'; }).join("") + '</div>'; }).join("") +
+      '<label for="e-niche" style="margin-top:10px">Primary category<select id="e-niche" name="niche"><option value="">Set from categories</option>' + TAXONOMY.map(function (g) { return g.cats.map(function (c) { return '<option value="' + c.id + '"' + (e.niche === c.id ? " selected" : "") + '>' + esc(c.name) + '</option>'; }).join(""); }).join("") + '</select></label></div>';
+    h += '<label class="chk full" for="e-conf"><input type="checkbox" id="e-conf" name="tentative"' + (e.dateConfidence === "tentative" ? " checked" : "") + '><span>Dates not yet confirmed (show “Dates TBC”)</span></label>';
+    h += '<label class="chk full" for="e-appr"><input type="checkbox" id="e-appr" name="approved"' + (e.approved !== false ? " checked" : "") + '><span>Approved and visible to everyone</span></label>';
+    h += '<div class="row full"><button class="btn primary" type="submit">' + (isEdit ? "Save changes" : "Add event") + '</button>' +
+      (isEdit ? (S.armed === e.id ? '<button class="btn danger" type="button" id="delConfirm">Confirm delete</button><button class="btn ghost" type="button" data-disarm="1">Keep</button>' : '<button class="btn danger" type="button" id="delArm">Delete event</button>') : "") + '</div></form>';
+    return h;
+  }
+  function readForm() {
+    var f = $("#evForm"), g = function (n) { return (f.elements[n].value || "").trim(); };
+    var cats = Array.prototype.slice.call(f.querySelectorAll('input[name="cat"]:checked')).map(function (x) { return x.value; });
+    var marketIds = TAXONOMY[0].cats.map(function (c) { return c.id; });
+    var cm = g("costMin");
+    return {
+      title: g("title"), organizer: g("organizer"), url: g("url"), start: g("start"), end: g("end") || g("start"), startTime: g("startTime"), endTime: g("endTime"),
+      tz: g("tz") || "UTC", format: g("format"), status: g("status"), venue: g("format") === "Virtual" ? "Online / Virtual" : g("venue"), city: g("city"), country: g("country"),
+      language: g("language") || "English", cost: g("cost"), costMin: cm === "" ? null : Math.max(0, Number(cm)), description: g("description"), categories: cats,
+      niche: g("niche") || cats.filter(function (c) { return marketIds.indexOf(c) >= 0; })[0] || cats[0] || "", groups: groupsFor(cats),
+      dateConfidence: f.elements.tentative.checked ? "tentative" : "confirmed", approved: f.elements.approved.checked
+    };
+  }
+  function keepForm(extraMsg) { var cur = readForm(); cur.id = S.editing && S.editing.id; S.editing = cur; if (extraMsg) S.msg = extraMsg; renderAdmin(); }
+  function errText(err) {
+    var c = err && err.code;
+    if (c === "invalid_argument") return "You don’t have permission to change events. Ask the owner for Editor access.";
+    if (c === "quota_exceeded") return "The event database is full. Delete past events and try again.";
+    if (c === "resource_exhausted") return "Too many changes at once. Wait a moment and try again.";
+    return "Couldn’t save right now. Check your connection and try again.";
+  }
+  async function guarded(fn, ok) { try { await fn(); S.msg = ["ok", ok]; return true; } catch (err) { S.msg = ["err", errText(err)]; return false; } }
+
+  $("#pbody").addEventListener("click", async function (e) {
+    var t = e.target.closest("button, a"); if (!t) return;
+    if (t.dataset.mark) { toggleMark(t.dataset.id, t.dataset.mark); return; }
+    if (t.dataset.edit) { S.editing = Object.assign({}, S.events.find(function (x) { return x.id === t.dataset.edit; })); S.panel = "admin"; S.ptab = "edit"; S.msg = null; renderAdmin(); return; }
+    if (t.id === "autoTag") {
+      var f = $("#evForm"), r = classifyEvent(f.elements.title.value, f.elements.description.value);
+      f.querySelectorAll('input[name="cat"]').forEach(function (c) { c.checked = r.categories.indexOf(c.value) >= 0; });
+      f.elements.niche.value = r.niche || "";
+      if (!r.categories.length) keepForm(["err", "No category keywords found. Add a fuller description or pick categories by hand."]);
+      return;
+    }
+    if (t.dataset.arm) { S.armed = t.dataset.arm; renderAdmin(); return; }
+    if (t.dataset.disarm) { S.armed = null; if (S.ptab === "edit") keepForm(); else renderAdmin(); return; }
+    if (t.id === "delArm") { var cur = readForm(); cur.id = S.editing.id; S.editing = cur; S.armed = cur.id; renderAdmin(); return; }
+    if (t.id === "delConfirm") { await guarded(function () { return S.db.collection("events").doc(S.editing.id).delete(); }, "Event deleted."); S.editing = null; S.ptab = "queue"; renderAdmin(); return; }
+    if (t.dataset.approve) { await guarded(function () { return S.db.collection("events").doc(t.dataset.approve).update({ approved: true, updatedAt: new Date().toISOString() }); }, "Approved and published."); renderAdmin(); return; }
+    if (t.dataset.reject) { await guarded(function () { return S.db.collection("events").doc(t.dataset.reject).delete(); }, "Rejected and removed."); S.armed = null; renderAdmin(); return; }
+    if (t.id === "parseFeed") { S.parsed = parseFeed($("#feedText").value); S.msg = S.parsed.length ? ["ok", S.parsed.length + " events parsed and auto-tagged. Check them below, then add to the queue."] : ["err", "No events found. Paste RSS, iCal (.ics) or a JSON array in the formats listed above."]; renderAdmin(); return; }
+    if (t.id === "addParsed") {
+      var now = new Date().toISOString(), n = 0, skip = 0;
+      for (var i = 0; i < S.parsed.length; i++) {
+        var p = S.parsed[i];
+        if (S.events.some(function (x) { return x.id === p.id; })) { skip++; continue; }
+        try { await S.db.collection("events").doc(p.id).set(Object.assign({}, p, { createdAt: now, updatedAt: now })); n++; } catch (err) { S.msg = ["err", errText(err)]; renderAdmin(); return; }
+      }
+      S.parsed = []; S.ptab = "queue"; S.msg = ["ok", n + " added to the review queue" + (skip ? ", " + skip + " duplicates skipped." : ".")]; renderAdmin(); return;
+    }
+  });
+  $("#pbody").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    var ev = readForm();
+    if (!ev.title || !ev.start) return keepForm(["err", "Add an event name and a start date."]);
+    if (ev.end < ev.start) return keepForm(["err", "The end date is before the start date."]);
+    var id = S.editing && S.editing.id, prev = id ? S.events.find(function (x) { return x.id === id; }) : null, now = new Date().toISOString();
+    if (!id) { id = slug(ev.title) + "-" + ev.start; if (S.events.some(function (x) { return x.id === id; })) id += "-" + Date.now().toString(36); }
+    ev.id = id; ev.createdAt = (prev && prev.createdAt) || now; ev.updatedAt = now; ev.source = (prev && prev.source) || "manual"; ev.autoTagged = false;
+    if (prev && prev.sourceUrl) ev.sourceUrl = prev.sourceUrl;
+    var ok = await guarded(function () { return S.db.collection("events").doc(id).set(ev); }, prev ? "Saved." : "Event added.");
+    S.editing = ev; if (!ok && !prev) delete S.editing.id;
+    renderAdmin();
+  });
+
+  // ---------- Import ----------
+  function importHTML() {
+    var h = '<p class="note">Paste an RSS feed, an iCal file (.ics) or a JSON array. Each item is parsed, converted to BDST and UTC, auto-tagged, and queued for approval. Live daily searching runs separately; see the Daily discovery tab.</p>' +
+      '<p class="note">JSON fields: <code>title</code>, <code>start</code> (ISO date or date-time with offset), <code>end</code>, <code>timezone</code>, <code>url</code>, <code>location</code>, <code>description</code>, <code>cost</code>, <code>online</code>.</p>' + msgHTML();
+    h += '<label for="feedText" style="font-weight:600;font-size:13px">Feed content</label><textarea class="feed" id="feedText" placeholder="BEGIN:VEVENT&#10;SUMMARY:Gold Outlook 2027 Webinar&#10;DTSTART:20261118T140000Z&#10;LOCATION:Online&#10;END:VEVENT"></textarea>';
+    h += '<div class="row"><button class="btn primary" type="button" id="parseFeed">Parse and auto-tag</button></div>';
+    if (S.parsed.length) h += S.parsed.map(function (p) {
+      return '<div class="qitem"><h5>' + esc(p.title) + '</h5><span class="meta">' + esc(timeRows(p).bd) + ' BDST · ' + esc(where(p)) + (S.events.some(function (x) { return x.id === p.id; }) ? " · already in database" : "") + '</span><ul class="tags">' +
+        (p.categories.length ? p.categories.map(function (c) { return '<li><span class="tag">' + esc(CAT[c]) + '</span></li>'; }).join("") : '<li><span class="tag">Uncategorised</span></li>') + '</ul></div>';
+    }).join("") + '<div class="row"><button class="btn primary" type="button" id="addParsed">Add ' + S.parsed.length + ' to review queue</button></div>';
+    return h;
+  }
+  function splitDT(s, tzHint) {
+    // returns {date, time, tz}
+    s = String(s || "").trim(); if (!s) return null;
+    var m = s.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})\d{0,2}(Z)?)?$/);
+    if (m) return { date: m[1] + "-" + m[2] + "-" + m[3], time: m[4] ? m[4] + ":" + m[5] : "", tz: m[6] ? "UTC" : (tzHint || "UTC") };
+    m = s.match(/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}:\d{2})(?::\d{2}(?:\.\d+)?)?(Z|[+-]\d{2}:?\d{2})?)?$/);
+    if (m) {
+      if (m[3] && m[3] !== "Z") { var d = new Date(s); return { date: d.toISOString().slice(0, 10), time: d.toISOString().slice(11, 16), tz: "UTC" }; }
+      return { date: m[1], time: m[2] || "", tz: m[3] ? "UTC" : (tzHint || "UTC") };
+    }
+    var d2 = new Date(s); if (isNaN(d2)) return null;
+    return { date: d2.toISOString().slice(0, 10), time: /\d{1,2}:\d{2}/.test(s) ? d2.toISOString().slice(11, 16) : "", tz: "UTC" };
+  }
+  function mk(r) {
+    var s = splitDT(r.start, r.tz); if (!r.title || !s) return null;
+    var e = splitDT(r.end, r.tz);
+    if (e && s.tz !== e.tz && e.tz === "UTC" && e.time) { e = { date: new Date(zonedToUtc(e.date, e.time, "UTC")).toISOString().slice(0, 10), time: e.time, tz: "UTC" }; }
+    var endDate = e ? e.date : s.date;
+    if (r.allDayEnd && endDate > s.date) { var x = dateOnly(endDate); x.setUTCDate(x.getUTCDate() - 1); endDate = x.toISOString().slice(0, 10); }
+    var loc = r.location || "", online = r.online || /online|virtual|webinar|zoom/i.test(loc + " " + r.title);
+    var parts = loc.split(",").map(function (v) { return v.trim(); }).filter(Boolean);
+    var text = String(r.description || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 700);
+    var c = classifyEvent(r.title, text);
+    return {
+      id: slug(r.title) + "-" + s.date, title: String(r.title).trim(), organizer: r.organizer || "", url: r.url || "",
+      start: s.date, end: endDate < s.date ? s.date : endDate, startTime: s.time, endTime: e && e.time && e.tz === s.tz ? e.time : "", tz: s.tz,
+      format: online ? "Virtual" : /hybrid/i.test(text) ? "Hybrid" : "In-person", venue: online ? "Online / Virtual" : (parts.length > 2 ? parts[0] : ""),
+      city: online ? "" : (parts.length > 1 ? parts[parts.length - 2] : parts[0] || ""), country: online ? "" : (parts.length > 1 ? parts[parts.length - 1] : ""),
+      status: "Registration Open", cost: r.cost || "", costMin: /free/i.test(r.cost || "") ? 0 : null, language: "English", description: text,
+      categories: c.categories, niche: c.niche, groups: c.groups, dateConfidence: "confirmed", autoTagged: true, approved: false, source: "import"
+    };
+  }
+  function parseFeed(txt) {
+    txt = (txt || "").trim(); if (!txt) return [];
+    var out = [];
+    try {
+      if (txt[0] === "[" || txt[0] === "{") {
+        var j = JSON.parse(txt); if (!Array.isArray(j)) j = j.events || j.items || [j];
+        j.forEach(function (o) { out.push(mk({ title: o.title || o.name, start: o.start || o.startDate || o.date, end: o.end || o.endDate, tz: o.timezone || o.tz, url: o.url || o.link, location: o.location || [o.venue, o.city, o.country].filter(Boolean).join(", "), description: o.description || o.summary, organizer: o.organizer, cost: o.cost || o.price, online: o.online })); });
+      } else if (/BEGIN:VEVENT/.test(txt)) {
+        txt.replace(/\r?\n[ \t]/g, "").split("BEGIN:VEVENT").slice(1).forEach(function (blk) {
+          var f = {}, tzid = ""; blk.split(/\r?\n/).forEach(function (line) {
+            var i = line.indexOf(":"); if (i < 0) return; var head = line.slice(0, i), k = head.split(";")[0].toUpperCase();
+            if (k === "DTSTART") { var mm = head.match(/TZID=([^;]+)/); if (mm) tzid = mm[1]; }
+            f[k] = line.slice(i + 1).replace(/\\n/g, " ").replace(/\\,/g, ",").replace(/\\;/g, ";");
+          });
+          out.push(mk({ title: f.SUMMARY, start: f.DTSTART, end: f.DTEND, tz: validTz(tzid) ? tzid : "UTC", allDayEnd: /DTEND;VALUE=DATE:/i.test(blk), url: f.URL, location: f.LOCATION, description: f.DESCRIPTION, organizer: (f.ORGANIZER || "").replace(/^.*CN=([^;:]+).*$/, "$1") }));
+        });
+      } else if (/<(rss|feed|item|entry)[\s>]/i.test(txt)) {
+        var doc = new DOMParser().parseFromString(txt, "text/xml");
+        doc.querySelectorAll("item, entry").forEach(function (it) {
+          var g = function (n) { var el = it.getElementsByTagName(n)[0]; return el ? (el.textContent || el.getAttribute("href") || "").trim() : ""; };
+          out.push(mk({ title: g("title"), start: g("ev:startdate") || g("startDate") || g("pubDate") || g("published"), end: g("ev:enddate") || g("endDate"), url: g("link"), location: g("ev:location") || g("location"), description: g("description") || g("summary") || g("content") }));
+        });
+      }
+    } catch (err) { return []; }
+    return out.filter(Boolean);
+  }
+  function runsHTML() { return window.TED && window.TED.aiPanel ? window.TED.aiPanel(S.runs) : ""; }
+
+  // ---------- Public interactions ----------
+  $("#tabs").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-view]"); if (!b) return;
+    S.view = b.dataset.view; try { localStorage.setItem("ted.view", S.view); } catch (x) {}
+    renderAll();
+  });
+  $("#tabs").addEventListener("keydown", function (e) {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    var ids = TF.map(function (t) { return t.id; }).concat(["plan"]), i = ids.indexOf(S.view);
+    S.view = ids[(i + (e.key === "ArrowRight" ? 1 : -1) + ids.length) % ids.length]; renderAll(); $('[data-view="' + S.view + '"]').focus();
+  });
+  var qT; $("#q").addEventListener("input", function (e) { clearTimeout(qT); qT = setTimeout(function () { S.q = e.target.value.trim(); renderTabs(); renderFilters(); renderMain(); }, 150); });
+  $("#filters").addEventListener("change", function (e) {
+    var t = e.target;
+    if (t.dataset.k) { t.checked ? S[t.dataset.k].add(t.value) : S[t.dataset.k].delete(t.value); }
+    else if (t.id === "f-free") S.freeOnly = t.checked;
+    else if (t.id === "showPend") S.showPending = t.checked;
+    var fid = t.id; renderTabs(); renderMain(); renderFilters(); var back = document.getElementById(fid); if (back) back.focus();
+  });
+  $("#filters").addEventListener("toggle", function (e) { if (e.target.dataset && e.target.dataset.s) open[e.target.dataset.s] = e.target.open; }, true);
+  $("#filters").addEventListener("click", function (e) { if (e.target.id === "clearAll") { S.cats.clear(); S.formats.clear(); S.statuses.clear(); S.freeOnly = false; S.q = ""; $("#q").value = ""; renderAll(); } });
+  $("#filterToggle").addEventListener("click", function () { var c = $("#filters").classList.toggle("collapsed"); this.setAttribute("aria-expanded", String(!c)); });
+  $("#main").addEventListener("click", function (e) {
+    var t = e.target.closest("button"); if (!t) return;
+    if (t.dataset.mark) return toggleMark(t.dataset.id, t.dataset.mark);
+    if (t.dataset.cat) { S.cats.add(t.dataset.cat); if (S.view === "plan") S.view = "180"; renderAll(); return; }
+    if (t.dataset.detail) return openPanel("detail", t.dataset.detail);
+    if (t.dataset.edit) { S.ptab = "edit"; S.editing = Object.assign({}, S.events.find(function (x) { return x.id === t.dataset.edit; })); openPanel("admin"); }
+  });
+
+  // ---------- Boot ----------
+  S.plan = loadLocal();
+  renderTabs(); renderFilters();
+  (async function boot() {
+    var c = window.TED;
+    var db = c && c.use ? await c.use("db") : null, user = c && c.use ? await c.use("user") : null;
+    S.db = db;
+    if (user) { try { S.canEdit = !!(await user.canEdit()); } catch (e) {} try { S.uid = await user.id(); } catch (e) {} }
+    $("#adminBtn").hidden = !S.canEdit;
+    if (!db) { S.loaded = true; renderAll(); return; }
+    db.collection("events").onSnapshot(function (snap) {
+      S.events = snap.docs.map(function (d) { return Object.assign({}, d.data(), { id: d.id }); }).filter(function (x) { return x.title && x.start; });
+      S.loaded = true; renderAll();
+    }, function () { S.loaded = true; renderAll(); });
+    if (S.canEdit) {
+      db.collection("runs").orderBy("ranAt", "desc").limit(14).onSnapshot(function (snap) { S.runs = snap.docs.map(function (d) { return d.data(); }); if (S.panel === "admin" && S.ptab === "runs") renderAdmin(); }, function () {});
+    }
+    if (S.uid) {
+      S.planDoc = db.doc("data/users/" + S.uid + "/plan");
+      var first = true;
+      S.planDoc.onSnapshot(function (snap) {
+        var remote = (snap.exists && snap.data().items) || {};
+        if (first) {
+          first = false; S.planMode = "cloud";
+          // merge anything saved locally before sign-in, then keep the account copy
+          var local = loadLocal(), merged = Object.assign({}, local, remote);
+          if (Object.keys(local).some(function (k) { return !remote[k]; })) {
+            writing = writing.then(function () { return S.planDoc.set({ items: merged, updatedAt: new Date().toISOString() }); }).catch(function () { S.planMode = "local"; });
+          }
+          S.plan = merged; renderAll(); return;
+        }
+        if (!snap.metadata.hasPendingWrites) { S.plan = Object.assign({}, remote); renderAll(); }
+      }, function () { S.planMode = "local"; renderAll(); });
+    }
+  })();
+})();
+</script>
+
+</body>
+</html>

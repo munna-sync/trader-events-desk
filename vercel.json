@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/cron/discover", "schedule": "45 23 * * *" }
+  ],
+  "functions": {
+    "api/cron/discover.js": { "maxDuration": 300 },
+    "api/admin/ai.js": { "maxDuration": 300 }
+  },
+  "headers": [
+    { "source": "/api/(.*)", "headers": [{ "key": "Cache-Control", "value": "no-store" }] }
+  ]
+}

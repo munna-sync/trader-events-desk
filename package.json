@@ -1,0 +1,14 @@
+{
+  "name": "trader-events-desk",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Trading, fintech, trade and business events portal with BDST/UTC times and AI-powered daily discovery.",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test": "node --test tests/discovery.test.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.45.4"
+  }
+}
