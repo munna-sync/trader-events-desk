@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
-    { "path": "/api/cron/discover", "schedule": "45 23 * * *" }
+    { "path": "/api/cron/discover", "schedule": "15 0 * * *" }
   ],
   "functions": {
     "api/cron/discover.js": { "maxDuration": 300 },
