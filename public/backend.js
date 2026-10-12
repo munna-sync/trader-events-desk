@@ -3,7 +3,7 @@
 // backed by Supabase. Also adds email sign-in and the admin "AI & discovery" panel.
 (function () {
   "use strict";
-  var sbPromise = fetch("/api/config").then(function (r) { return r.json(); }).then(function (c) {
+  var sbPromise = fetch("/api/config", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (c) {
     if (!c.url || !c.anonKey || !window.supabase) throw new Error("Supabase is not configured");
     return window.supabase.createClient(c.url, c.anonKey, { auth: { persistSession: true, detectSessionInUrl: true, autoRefreshToken: true } });
   });
