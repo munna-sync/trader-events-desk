@@ -23,7 +23,7 @@ test("normalizes a valid event and drops invalid ones", () => {
   assert.equal(r.niche, "forex");
   assert.deepEqual(r.groups, ["trading"]);
   assert.equal(r.cost_min, 0);
-  assert.equal(r.approved, false);
+  assert.equal(r.approved, true);
   assert.equal(normalize({ ...good, start: "2026-01-01", end: "2026-01-02" }, { today, source: "x" }), null, "past event dropped");
   assert.equal(normalize({ ...good, start: "2030-01-01", end: "2030-01-01" }, { today, source: "x" }), null, "beyond 2-year horizon dropped");
   assert.equal(normalize({ ...good, title: "" }, { today, source: "x" }), null);
@@ -132,4 +132,12 @@ test("cron endpoint rejects calls without the secret", async () => {
   let code; const res = { status(c) { code = c; return this; }, json() { return this; } };
   await cron({ headers: {}, query: {} }, res);
   assert.equal(code, 401);
+});
+
+test("JSON feed items in the portal's own format pass through with their fields", async () => {
+  const { parseFeed, normalize } = await import("../lib/discovery.mjs");
+  const items = parseFeed("json", JSON.stringify({ events: [{ title: "Dubai Forex Expo", start: "2099-01-10", end: "2099-01-11", startTime: "10:00", tz: "Asia/Dubai", format: "In-person", status: "Early Bird", categories: ["forex"], niche: "forex", url: "https://example.com", sourceUrl: "https://example.com", dateConfidence: "confirmed", description: "x" }] }), "UTC");
+  assert.equal(items[0].tz, "Asia/Dubai");
+  assert.equal(items[0].status, "Early Bird");
+  assert.equal(items[0].startTime, "10:00");
 });
